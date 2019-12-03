@@ -1,0 +1,71 @@
+execve("./server", ["./server", "7838", "cacert.pem", "privkey.pem"], [/* 80 vars */]) = 0
+brk(NULL)                               = 0xca1000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=127431, ...}) = 0
+mmap(NULL, 127431, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f6d3d54e000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/x86_64-linux-gnu/libssl.so.1.0.0", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\320^\1\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0644, st_size=428384, ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d54d000
+mmap(NULL, 2523600, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f6d3d0e0000
+mprotect(0x7f6d3d13e000, 2097152, PROT_NONE) = 0
+mmap(0x7f6d3d33e000, 45056, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5e000) = 0x7f6d3d33e000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/x86_64-linux-gnu/libcrypto.so.1.0.0", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\36\6\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0644, st_size=2365952, ...}) = 0
+mmap(NULL, 4475776, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f6d3cc9b000
+mprotect(0x7f6d3ceb6000, 2093056, PROT_NONE) = 0
+mmap(0x7f6d3d0b5000, 163840, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x21a000) = 0x7f6d3d0b5000
+mmap(0x7f6d3d0dd000, 11136, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d0dd000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0P\t\2\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=1868984, ...}) = 0
+mmap(NULL, 3971488, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f6d3c8d1000
+mprotect(0x7f6d3ca91000, 2097152, PROT_NONE) = 0
+mmap(0x7f6d3cc91000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1c0000) = 0x7f6d3cc91000
+mmap(0x7f6d3cc97000, 14752, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f6d3cc97000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/x86_64-linux-gnu/libdl.so.2", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\240\r\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0644, st_size=14608, ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d54c000
+mmap(NULL, 2109680, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f6d3c6cd000
+mprotect(0x7f6d3c6d0000, 2093056, PROT_NONE) = 0
+mmap(0x7f6d3c8cf000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7f6d3c8cf000
+close(3)                                = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d54b000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d54a000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6d3d549000
+arch_prctl(ARCH_SET_FS, 0x7f6d3d54a700) = 0
+mprotect(0x7f6d3cc91000, 16384, PROT_READ) = 0
+mprotect(0x7f6d3c8cf000, 4096, PROT_READ) = 0
+mprotect(0x7f6d3d0b5000, 114688, PROT_READ) = 0
+mprotect(0x7f6d3d33e000, 16384, PROT_READ) = 0
+mprotect(0x601000, 4096, PROT_READ)     = 0
+mprotect(0x7f6d3d56e000, 4096, PROT_READ) = 0
+munmap(0x7f6d3d54e000, 127431)          = 0
+brk(NULL)                               = 0xca1000
+brk(0xcc2000)                           = 0xcc2000
+getpid()                                = 15557
+open("/dev/urandom", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 3
+fstat(3, {st_mode=S_IFCHR|0666, st_rdev=makedev(1, 9), ...}) = 0
+poll([{fd=3, events=POLLIN}], 1, 10)    = 1 ([{fd=3, revents=POLLIN}])
+read(3, "\245I\375\204vF.\330\337VY?\336\342\377\254\323\304*\302\21t\30\275\36<\332#\17u\34\370", 32) = 32
+close(3)                                = 0
+getuid()                                = 1000
+open(NULL, O_RDONLY)                    = -1 EFAULT (Bad address)
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 20), ...}) = 0
+write(1, "140107157120664:error:0200100E:s"..., 93) = 93
+write(1, "140107157120664:error:20074002:B"..., 81) = 81
+write(1, "140107157120664:error:140AD002:S"..., 99) = 99
+exit_group(1)                           = ?
++++ exited with 1 +++
