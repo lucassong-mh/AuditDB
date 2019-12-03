@@ -16,19 +16,16 @@
 char fe_buff[MAXBUFF], be_buff[MAXBUFF];
 
 int fe_socket_fd, fe_connect_fd;
-struct sockaddr_in fe_addr;
 
 int be_socket_fd;
-struct sockaddr_in be_addr;
 
-int optval = 1;
+// struct timeval timeout = {1, 0};
 
-struct timeval timeout = {1, 0};
-
-int main(int argc, char **argv)
+//PG Client <=====> Proxy
+void connect_fe(const char *addr, unsigned int port)
 {
-	//PG Client <=====> Proxy
 
+	struct sockaddr_in fe_addr;
 	if ((fe_socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == -1)
 	{
 		printf("PG Client <===> Proxy create socket error: %s(errno: %d)\n", strerror(errno), errno);
@@ -36,10 +33,11 @@ int main(int argc, char **argv)
 	}
 	memset(&fe_addr, 0, sizeof(fe_addr));
 	fe_addr.sin_family = AF_INET;
-	fe_addr.sin_addr.s_addr = inet_addr(ADDR);
-	printf("Proxy IP: %s\n", ADDR);
-	fe_addr.sin_port = htons(PORT);
+	fe_addr.sin_addr.s_addr = inet_addr(addr);
+	fe_addr.sin_port = htons(port);
+	printf("Proxy IP: %s  Port: %d\n", addr, port);
 
+	int optval = 1;
 	setsockopt(fe_socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
 
 	if (bind(fe_socket_fd, (struct sockaddr *)&fe_addr, sizeof(fe_addr)) == -1)
@@ -52,16 +50,19 @@ int main(int argc, char **argv)
 		printf("PG Client <===> Proxy listen socket error: %s(errno: %d)\n", strerror(errno), errno);
 		exit(0);
 	}
-	printf("======waiting for PG Client's request======\n");
+	printf(" Connection with PG Client Succeed!\n");
 
 	if ((fe_connect_fd = accept(fe_socket_fd, (struct sockaddr *)NULL, NULL)) < 0)
 	{
 		printf("accept socket error: %s(errno: %d)", strerror(errno), errno);
 	}
 	fe_config();
+}
 
-
-	//Proxy <=====> PG Server
+//Proxy <=====> PG Server
+void connect_be(const char *addr, unsigned int port)
+{
+	struct sockaddr_in be_addr;
 
 	if ((be_socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_IP)) < 0)
 	{
@@ -73,25 +74,29 @@ int main(int argc, char **argv)
 
 	memset(&be_addr, 0, sizeof(be_addr));
 	be_addr.sin_family = AF_INET;
-	be_addr.sin_addr.s_addr = inet_addr(PG_SERV_ADDR);
-	printf("PG Server IP: %s\n", PG_SERV_ADDR);
-	be_addr.sin_port = htons(PG_SERV_PORT);
+	be_addr.sin_addr.s_addr = inet_addr(addr);
+	be_addr.sin_port = htons(port);
+
+	printf("PG Server IP: %s  Port: %d\n", addr, port);
 
 	if (connect(be_socket_fd, (struct sockaddr *)&be_addr, sizeof(be_addr)) < 0)
 	{
 		printf("Proxy <===> PG Server connect error: %s(errno: %d)\n", strerror(errno), errno);
 		exit(0);
 	}
-	printf("======waiting for PG Server's response======\n");
+	printf(" Connection with PG Server Succeed!\n");
+}
 
-	// printf("fe socket fd: %d, be socket fd: %d\n", fe_socket_fd, be_socket_fd);
-
+int main(int argc, char **argv)
+{
+	connect_be(PG_SERV_ADDR, PG_SERV_PORT);
+	connect_fe(ADDR, PORT);
 
 	while (1)
 	{
 		if (!isSocketConnected(fe_connect_fd))
 		{
-			reconnect();
+			reconnect(PG_SERV_ADDR, PG_SERV_PORT);
 		}
 
 		int cn;
@@ -103,17 +108,16 @@ int main(int argc, char **argv)
 		{
 			if (!isSocketConnected(fe_connect_fd))
 			{
-				reconnect();
+				reconnect(PG_SERV_ADDR, PG_SERV_PORT);
 				break;
 			}
-			// printf("C===P\n");
 			cn = (int)recv(fe_connect_fd, fe_buff, MAXBUFF, 0);
 			// printf("cn: %d, errno: %d\n", cn, errno);
-			for (int i = 0; i < 8; i++)
-			{
-				printf("%c ", fe_buff[i]);
-			}
-			puts("");
+			// for (int i = 0; i < 8; i++)
+			// {
+			// 	printf("%c ", fe_buff[i]);
+			// }
+			// puts("");
 			if (cn > 0)
 			{
 				printf("recv msg from client(%d): %d\n", fe_connect_fd, cn);
@@ -141,17 +145,10 @@ int main(int argc, char **argv)
 		{
 			if (!isSocketConnected(fe_connect_fd))
 			{
-				reconnect();
+				reconnect(PG_SERV_ADDR, PG_SERV_PORT);
 				break;
 			}
-			// printf("P===S\n");
 			sn = (int)recv(be_socket_fd, be_buff, MAXBUFF, 0);
-			// printf("sn: %d, errno: %d\n", sn, errno);
-			for (int i = 0; i < 8; i++)
-			{
-				printf("%c ", be_buff[i]);
-			}
-			puts("");
 			if (sn > 0)
 			{
 
@@ -203,18 +200,24 @@ int isSocketConnected(int socket_fd)
 	}
 }
 
-int reconnect()
+int reconnect(const char *addr, unsigned int port)
 {
 	fe_connect_fd = accept(fe_socket_fd, (struct sockaddr *)NULL, NULL);
 	fe_config();
 	close(be_socket_fd);
 	be_socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 	be_config();
+	struct sockaddr_in be_addr;
+	memset(&be_addr, 0, sizeof(be_addr));
+	be_addr.sin_family = AF_INET;
+	be_addr.sin_addr.s_addr = inet_addr(addr);
+	be_addr.sin_port = htons(port);
 	connect(be_socket_fd, (struct sockaddr *)&be_addr, sizeof(be_addr));
 }
 
 void fe_config()
 {
+	int optval = 1;
 	setsockopt(fe_connect_fd, SOL_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
 	setsockopt(fe_connect_fd, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
 	// setsockopt(fe_connect_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(struct timeval));
@@ -223,6 +226,7 @@ void fe_config()
 
 void be_config()
 {
+	int optval = 1;
 	setsockopt(be_socket_fd, SOL_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
 	setsockopt(be_socket_fd, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
 	// setsockopt(be_socket_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(struct timeval));
