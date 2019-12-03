@@ -1,2 +1,3 @@
-# AuditDB
-Audit Proxy between PG CS using TEE
+# SGX-Proxy
+
+Proxy using OpenSSL library for SGX
