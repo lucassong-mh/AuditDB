@@ -186,11 +186,11 @@ static sgx_status_t SGX_CDECL sgx_ecall_start_tls_auditor(void* pms)
 
 SGX_EXTERNC const struct {
 	size_t nr_ecall;
-	struct {void* ecall_addr; uint8_t is_priv;} ecall_table[1];
+	struct {void* ecall_addr; uint8_t is_priv; uint8_t is_switchless;} ecall_table[1];
 } g_ecall_table = {
 	1,
 	{
-		{(void*)(uintptr_t)sgx_ecall_start_tls_auditor, 0},
+		{(void*)(uintptr_t)sgx_ecall_start_tls_auditor, 0, 0},
 	}
 };
 

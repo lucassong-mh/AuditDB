@@ -18,6 +18,12 @@ int fe_socket_fd, fe_connect_fd;
 
 int be_socket_fd;
 
+SSL *fe_ssl;
+SSL *be_ssl;
+
+SSL_CTX *fe_ctx;
+SSL_CTX *be_ctx;
+
 static void init_openssl()
 {
     OpenSSL_add_ssl_algorithms();
@@ -254,18 +260,36 @@ static void connect_fe(const char *ip, uint32_t port)
 
     printf("Proxy IP: %s  Port:%d\n", ip, port);
     printf(" Waiting for PG Client's Request...\n");
-    
+}
+
+static void connect_fe_ssl()
+{
     if ((fe_connect_fd = accept(fe_socket_fd, (struct sockaddr *)NULL, NULL)) < 0)
     {
         printe("sgx_accept error\n");
         exit(EXIT_FAILURE);
     }
     fe_config();
+
+    fe_ctx = create_context();
+    configure_context(fe_ctx);
+    fe_ssl = SSL_new(fe_ctx);
+    SSL_set_fd(fe_ssl, fe_connect_fd);
+    if (SSL_accept(fe_ssl) <= 0)
+    {
+        printe("SSL_accept");
+        exit(EXIT_FAILURE);
+    }
+    printl("ciphersuit: %s", SSL_get_current_cipher(fe_ssl)->name);
 }
 
 //Proxy <=====> PG Server
 static void connect_be(const char *ip, uint32_t port)
 {
+    const long flags = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+    be_ctx = create_context();
+    SSL_CTX_set_options(be_ctx, flags);
+
     struct sockaddr_in dest_addr;
 
     be_socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_IP);
@@ -287,33 +311,27 @@ static void connect_be(const char *ip, uint32_t port)
         printe("sgx_connect error");
         exit(EXIT_FAILURE);
     }
+    be_ssl = SSL_new(be_ctx);
+    SSL_set_fd(be_ssl, be_socket_fd);
+    if (SSL_connect(be_ssl) <= 0)
+    {
+        printe("SSL_connect");
+        exit(EXIT_FAILURE);
+    }
+    printl("ciphersuit: %s", SSL_get_current_cipher(be_ssl)->name);
     printf("Proxy IP: %s  Port:%d\n", ip, port);
     printf(" Connection with PG Server Succeed!\n");
 }
 
 int reconnect(const char *ip, uint32_t port)
 {
-    fe_connect_fd = accept(fe_socket_fd, (struct sockaddr *)NULL, NULL);
-    if (fe_connect_fd < 0)
-    {
-        printe("Unable to accept");
-        exit(EXIT_FAILURE);
-    }
-    fe_config();
+    connect_fe_ssl();
+
+    SSL_free(be_ssl);
+    SSL_CTX_free(be_ctx);
     sgx_close(be_socket_fd);
-    be_socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (be_socket_fd < 0)
-    {
-        printe("Unable to connect");
-        exit(EXIT_FAILURE);
-    }
-    be_config();
-    struct sockaddr_in dest_addr;
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_addr.s_addr = (long)inet_addr(ip);
-    dest_addr.sin_port = htons(port);
-    memset(&(dest_addr.sin_zero), '\0', 8);
-    connect(be_socket_fd, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+
+    connect_be(PG_SERV_ADDR, PG_SERV_PORT);
     printf("reconnect!\n");
 }
 
@@ -338,68 +356,12 @@ int isSocketConnected(int socket_fd)
 
 void ecall_start_tls_auditor(void)
 {
-    // SSL_CTX *ctx;
-
-    // printl("OPENSSL Version = %s", SSLeay_version(SSLEAY_VERSION));
-    // init_openssl();
-    // ctx = create_context();
-    // configure_context(ctx);
-
-    // if ((fe_socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == -1)
-    // {
-    //     printe("PG Client <===> Proxy create socket error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // memset(&fe_addr, 0, sizeof(fe_addr));
-    // fe_addr.sin_family = AF_INET;
-    // fe_addr.sin_addr.s_addr = inet_addr(ADDR);
-    // printf("Proxy IP: %s\n", ADDR);
-    // fe_addr.sin_port = htons(PORT);
-
-    // setsockopt(fe_socket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
-
-    // if (bind(fe_socket_fd, (struct sockaddr *)&fe_addr, sizeof(fe_addr)) == -1)
-    // {
-    //     printf("PG Client <===> Proxy bind socket error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // if (listen(fe_socket_fd, 10) == -1)
-    // {
-    //     printf("PG Client <===> Proxy listen socket error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // printf("======waiting for PG Client's request======\n");
-
-    // if ((fe_connect_fd = accept(fe_socket_fd, (struct sockaddr *)NULL, NULL)) < 0)
-    // {
-    //     printe("accept socket error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // fe_config();
-
-    // if ((be_socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_IP)) < 0)
-    // {
-    //     printf("Proxy <===> PG Server create socket error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // be_config();
-
-    // memset(&be_addr, 0, sizeof(be_addr));
-    // be_addr.sin_family = AF_INET;
-    // be_addr.sin_addr.s_addr = inet_addr(PG_SERV_ADDR);
-    // printf("PG Server IP: %s\n", PG_SERV_ADDR);
-    // be_addr.sin_port = htons(PG_SERV_PORT);
-
-    // if (connect(be_socket_fd, (struct sockaddr *)&be_addr, sizeof(be_addr)) < 0)
-    // {
-    //     printf("Proxy <===> PG Server connect error\n");
-    //     exit(EXIT_FAILURE);
-    // }
-    // printf("======waiting for PG Server's response======\n");
+    printl("OPENSSL Version = %s", SSLeay_version(SSLEAY_VERSION));
+    init_openssl();
 
     connect_be(PG_SERV_ADDR, PG_SERV_PORT);
     connect_fe(ADDR, PORT);
+    connect_fe_ssl();
 
     while (1)
     {
@@ -420,7 +382,7 @@ void ecall_start_tls_auditor(void)
                 reconnect(PG_SERV_ADDR, PG_SERV_PORT);
                 break;
             }
-            cn = sgx_read(fe_connect_fd, fe_buff, MAXBUFF);
+            cn = SSL_read(fe_ssl, fe_buff, MAXBUFF);
             // for (int i = 0; i < 8; i++)
             // {
             //     printf("%c ", fe_buff[i]);
@@ -429,7 +391,7 @@ void ecall_start_tls_auditor(void)
             if (cn > 0)
             {
                 printf("recv msg from client(%d): %d\n", fe_connect_fd, cn);
-                if ((send_sn = sgx_write(be_socket_fd, fe_buff, cn)) < 0)
+                if ((send_sn = SSL_write(be_ssl, fe_buff, cn)) < 0)
                 {
                     printe("send to server error");
                     exit(EXIT_FAILURE);
@@ -457,12 +419,12 @@ void ecall_start_tls_auditor(void)
                 reconnect(PG_SERV_ADDR, PG_SERV_PORT);
                 break;
             }
-            sn = sgx_read(be_socket_fd, be_buff, MAXBUFF);
+            sn = SSL_read(be_ssl, be_buff, MAXBUFF);
             if (sn > 0)
             {
 
                 printf("recv msg from server(%d): %d\n", be_socket_fd, sn);
-                if ((send_cn = sgx_write(fe_connect_fd, be_buff, sn)) < 0)
+                if ((send_cn = SSL_write(fe_ssl, be_buff, sn)) < 0)
                 {
                     printe("send to client error");
                     exit(EXIT_FAILURE);
@@ -486,30 +448,13 @@ void ecall_start_tls_auditor(void)
         }
     }
 
+    SSL_free(fe_ssl);
     sgx_close(fe_connect_fd);
     sgx_close(fe_socket_fd);
+    SSL_CTX_free(fe_ctx);
+
+    SSL_free(be_ssl);
+    SSL_CTX_free(be_ctx);
     sgx_close(be_socket_fd);
-
-    // cli = SSL_new(ctx);
-    // SSL_set_fd(cli, fe_connect_fd);
-    // if (SSL_accept(cli) <= 0)
-    // {
-    //     printe("SSL_accept");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // printl("ciphersuit: %s", SSL_get_current_cipher(cli)->name);
-    // /* Receive buffer from TLS server */
-    // r = SSL_read(cli, read_buf, sizeof(read_buf));
-    // printl("read_buf: length = %d : %s", r, read_buf);
-    // memset(read_buf, 0, sizeof(read_buf));
-
-    // printl("Close SSL/TLS client");
-    // SSL_free(cli);
-    // sgx_close(fe_connect_fd);
-    // }
-
-    // sgx_close(fe_socket_fd);
-    // SSL_CTX_free(ctx);
-    // cleanup_openssl();
+    cleanup_openssl();
 }
